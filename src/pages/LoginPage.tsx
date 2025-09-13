@@ -5,6 +5,8 @@ import { auth } from '../firebase';
 import { FirebaseError } from 'firebase/app';
 import { Mail, Lock, Eye, EyeOff, AlertTriangle, CheckCircle, X, Loader2, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Lottie from 'lottie-react';
+import loginAnimation from '../assets/animations/login.json';
 
 type NotificationType = 'success' | 'error';
 
@@ -146,15 +148,29 @@ function LoginPage() {
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.2 } },
-  };
+  } as const;
 
   const itemVariants = {
     hidden: { y: 20, opacity: 0 },
     visible: { y: 0, opacity: 1 },
-  };
+  } as const;
+
+  const lottieVariants = {
+    hidden: { opacity: 0, scale: 0.8 },
+    visible: {
+      opacity: 1,
+      scale: 1,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 10,
+        delay: 0.3,
+      },
+    },
+  } as const;
 
   return (
-    <div className="min-h-screen w-full bg-gray-900 text-white flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen w-full bg-gray-900 text-white flex items-center justify-center p-4 pt-24 sm:pt-4 relative overflow-hidden">
       <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-gray-900 via-gray-900 to-emerald-900/50" />
       <div className="absolute -top-1/4 -left-1/4 w-1/2 h-1/2 bg-teal-500/10 rounded-full filter blur-3xl animate-pulse" />
       <div className="absolute -bottom-1/4 -right-1/4 w-1/2 h-1/2 bg-emerald-500/10 rounded-full filter blur-3xl animate-pulse" />
@@ -181,15 +197,32 @@ function LoginPage() {
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="relative z-10 w-full max-w-md"
+        className="relative z-10 w-full max-w-5xl flex flex-col lg:flex-row rounded-3xl overflow-hidden shadow-2xl bg-gray-800/50 backdrop-blur-xl border border-white/10"
       >
-        <div className="bg-gray-800/50 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-8">
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="w-full"
-          >
+        <motion.div
+          variants={lottieVariants}
+          initial="hidden"
+          animate="visible"
+          className="hidden lg:flex lg:w-1/2 p-8 flex-col items-center justify-center bg-gray-700/30 relative overflow-hidden"
+        >
+          <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_center,theme(colors.teal.600/20)_0%,transparent_70%)] blur-3xl"></div>
+          <div className="absolute -bottom-1/4 -right-1/4 w-3/4 h-3/4 bg-emerald-500/10 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-3000 opacity-60"></div>
+          
+          <Lottie 
+            animationData={loginAnimation}
+            loop={true} 
+            autoplay={true}
+            className="w-full max-w-[18rem] lg:max-w-sm relative z-10"
+          />
+        </motion.div>
+
+        <motion.div 
+          className="w-full lg:w-1/2 p-8 md:p-12 flex items-center justify-center"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          <div className="w-full max-w-md">
             <motion.div variants={itemVariants} className="text-center mb-8">
               <Link to="/">
                 <img src="/logo.png" alt="SplitBill Pro Logo" className="h-10 w-auto mx-auto mb-4" />
@@ -200,44 +233,43 @@ function LoginPage() {
 
             <motion.form variants={itemVariants} onSubmit={handleSubmit} noValidate>
               <div className="space-y-4">
-
                 <div>
-                    <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={20} />
-                        <input
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className={`w-full pl-10 pr-4 py-2.5 bg-white/5 rounded-lg border transition-all text-white placeholder-gray-500 ${errors.email ? 'border-red-500' : 'border-transparent focus:border-emerald-500'} focus:outline-none focus:ring-2 focus:ring-emerald-500/50`}
-                            placeholder="Alamat Email"
-                            required
-                            disabled={isLoading}
-                        />
-                    </div>
-                    {errors.email && <p className="text-red-400 text-xs mt-1 ml-1">{errors.email}</p>}
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={20} />
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className={`w-full pl-10 pr-4 py-2.5 bg-white/5 rounded-lg border transition-all text-white placeholder-gray-500 ${errors.email ? 'border-red-500' : 'border-transparent focus:border-emerald-500'} focus:outline-none focus:ring-2 focus:ring-emerald-500/50`}
+                      placeholder="Alamat Email"
+                      required
+                      disabled={isLoading}
+                    />
+                  </div>
+                  {errors.email && <p className="text-red-400 text-xs mt-1 ml-1">{errors.email}</p>}
                 </div>
 
                 <div>
-                    <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={20} />
-                        <input
-                            type={showPassword ? 'text' : 'password'}
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className={`w-full pl-10 pr-10 py-2.5 bg-white/5 rounded-lg border transition-all text-white placeholder-gray-500 ${errors.password ? 'border-red-500' : 'border-transparent focus:border-emerald-500'} focus:outline-none focus:ring-2 focus:ring-emerald-500/50`}
-                            placeholder="Kata Sandi"
-                            required
-                            disabled={isLoading}
-                        />
-                        <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
-                        >
-                            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                        </button>
-                    </div>
-                    {errors.password && <p className="text-red-400 text-xs mt-1 ml-1">{errors.password}</p>}
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={20} />
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className={`w-full pl-10 pr-10 py-2.5 bg-white/5 rounded-lg border transition-all text-white placeholder-gray-500 ${errors.password ? 'border-red-500' : 'border-transparent focus:border-emerald-500'} focus:outline-none focus:ring-2 focus:ring-emerald-500/50`}
+                      placeholder="Kata Sandi"
+                      required
+                      disabled={isLoading}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
+                    >
+                      {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
+                  </div>
+                  {errors.password && <p className="text-red-400 text-xs mt-1 ml-1">{errors.password}</p>}
                 </div>
               </div>
 
@@ -269,8 +301,8 @@ function LoginPage() {
                 Daftar Sekarang
               </Link>
             </motion.p>
-          </motion.div>
-        </div>
+          </div>
+        </motion.div>
       </motion.div>
     </div>
   );

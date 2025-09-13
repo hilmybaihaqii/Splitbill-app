@@ -11,7 +11,6 @@ type Feature = {
   desc: string;
 };
 
-
 const containerFeaturesVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
@@ -46,13 +45,20 @@ const FeatureCard: FC<Feature> = memo(({ imgSrc, altText, title, desc }) => {
       whileHover={{ y: -8 }}
       className="relative group [perspective:1000px]"
     >
-      <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 to-indigo-500 rounded-2xl blur opacity-0 group-hover:opacity-60 transition duration-300"></div>
+      {/* PERUBAHAN DI SINI: Opacity dikontrol oleh state 'isFlipped' DAN 'group-hover' */}
+      <div 
+        className={`absolute -inset-1 bg-gradient-to-r from-emerald-500 to-indigo-500 rounded-2xl blur transition duration-300 ${
+          isFlipped ? 'opacity-60' : 'opacity-0 group-hover:opacity-60'
+        }`}
+      ></div>
+
       <motion.div
         onClick={handleFlip}
         className="relative h-72 w-full cursor-pointer [transform-style:preserve-3d]"
         animate={{ rotateY: isFlipped ? 180 : 0 }}
         transition={{ duration: 0.6, ease: "easeInOut" }}
       >
+        {/* Sisi Depan Kartu */}
         <div className="absolute inset-0 flex h-full w-full flex-col items-center justify-center rounded-2xl bg-gray-800/90 p-6 text-center backdrop-blur-sm border border-white/10 [backface-visibility:hidden]">
           <div className="mb-4 rounded-full bg-emerald-500/10 p-4">
             <img
@@ -64,6 +70,8 @@ const FeatureCard: FC<Feature> = memo(({ imgSrc, altText, title, desc }) => {
           </div>
           <h3 className="text-2xl font-bold text-emerald-500">{title}</h3>
         </div>
+        
+        {/* Sisi Belakang Kartu */}
         <div className="absolute inset-0 flex h-full w-full flex-col items-center justify-center rounded-2xl bg-gray-800/90 p-6 text-center backdrop-blur-sm border border-white/10 [backface-visibility:hidden] [transform:rotateY(180deg)]">
           <div className="w-12 h-1 bg-emerald-500/50 rounded-full mb-4"></div>
           <p className="text-md text-gray-300">{desc}</p>
@@ -121,6 +129,5 @@ const FeaturesSection = forwardRef<HTMLDivElement, FeaturesSectionProps>(
     );
   }
 );
-
 
 export default memo(FeaturesSection);

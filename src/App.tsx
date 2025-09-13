@@ -6,6 +6,7 @@ import ProtectedRoute from './components/ProtectedRoute.tsx';
 import BillPage from './pages/BillPage.tsx';
 import SettingsPage from './pages/SettingsPage.tsx';
 import LandingPage from './pages/LandingPage.tsx';
+import NotFoundPage from './pages/NotFoundPage.tsx'; 
 
 function App() {
   return (
@@ -18,6 +19,8 @@ function App() {
         <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
         <Route path="/bill/:billId" element={<ProtectedRoute><BillPage /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </BrowserRouter>
   );
