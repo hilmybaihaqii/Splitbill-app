@@ -1,4 +1,4 @@
-import { useState, useCallback, memo } from 'react';
+import { useState, useCallback, memo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
@@ -129,13 +129,48 @@ const MobileMenu = memo(({ isMenuOpen, toggleMenu, activeSection }: MobileMenuPr
 
 const Header = ({ activeSection }: HeaderProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
 
   const toggleMenu = useCallback(() => {
     setIsMenuOpen(prev => !prev);
   }, []);
 
+  useEffect(() => {
+    const controlNavbar = () => {
+      if (typeof window !== 'undefined') {
+        if (window.scrollY > lastScrollY && window.scrollY > 100) {
+          setIsVisible(false);
+        } else {
+          setIsVisible(true);
+        }
+        setLastScrollY(window.scrollY);
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('scroll', controlNavbar);
+
+      // Cleanup function
+      return () => {
+        window.removeEventListener('scroll', controlNavbar);
+      };
+    }
+  }, [lastScrollY]);
+
+  const headerVariants = {
+    visible: { y: 0, opacity: 1 },
+    hidden: { y: '-100%', opacity: 0 },
+  };
+
   return (
-    <header className="py-4 px-6 lg:px-12 fixed top-0 w-full z-50 transition-all duration-300 bg-gray-900/90">
+    <motion.header
+      variants={headerVariants}
+      animate={isVisible ? 'visible' : 'hidden'}
+      transition={{ duration: 0.35, ease: 'easeInOut' }}
+      className="py-4 px-6 lg:px-12 fixed top-0 w-full z-50 bg-gray-900/90 backdrop-blur-sm"
+    >
       <div className="flex justify-between items-center max-w-6xl mx-auto">
         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="flex items-center space-x-2">
           <Link to="/">
@@ -148,12 +183,12 @@ const Header = ({ activeSection }: HeaderProps) => {
 
         <div className="md:hidden">
           <motion.button onClick={toggleMenu} className="p-2 text-gray-300" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            {isMenuOpen && isVisible ? <X size={24} /> : <Menu size={24} />}
           </motion.button>
         </div>
       </div>
       <MobileMenu isMenuOpen={isMenuOpen} toggleMenu={toggleMenu} activeSection={activeSection} />
-    </header>
+    </motion.header>
   );
 };
 

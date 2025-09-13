@@ -7,7 +7,6 @@ import { FirebaseError } from 'firebase/app';
 import { User, Mail, Lock, Eye, EyeOff, AlertTriangle, CheckCircle, X, Loader2, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Lottie from 'lottie-react';
-// Pastikan path ke file animasi Lottie Anda sudah benar
 import registerAnimation from '../assets/animations/register.json';
 
 type NotificationType = 'success' | 'error';

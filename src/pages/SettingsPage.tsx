@@ -1,3 +1,4 @@
+// --- FIX: Sintaks import diperbaiki (menghapus huruf 'a') ---
 import React, { useState, useCallback, memo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase';
@@ -8,8 +9,11 @@ import { toast } from 'react-toastify';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Save, KeyRound, Trash2, User, Lock, Mail, Shield, AlertTriangle } from 'lucide-react';
 
-const Avatar: React.FC<{ name: string }> = ({ name }) => {
-  const initials = name.split(' ').map((part) => part.charAt(0).toUpperCase()).join('');
+interface AvatarProps {
+  name: string;
+}
+const Avatar: React.FC<AvatarProps> = ({ name }) => {
+  const initials = name.split(' ').map((part: string) => part.charAt(0).toUpperCase()).join('');
   return (
     <div className="w-24 h-24 rounded-full bg-gradient-to-br from-emerald-500 to-teal-400 flex items-center justify-center text-white font-bold text-4xl shadow-lg ring-4 ring-gray-700">
       {initials}
@@ -17,7 +21,13 @@ const Avatar: React.FC<{ name: string }> = ({ name }) => {
   );
 };
 
-const NavItem: React.FC<{ icon: React.ElementType; label: string; isActive: boolean; onClick: () => void; }> = ({ icon: Icon, label, isActive, onClick }) => (
+interface NavItemProps {
+  icon: React.ElementType;
+  label: string;
+  isActive: boolean;
+  onClick: () => void;
+}
+const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, isActive, onClick }) => (
   <button
     onClick={onClick}
     className={`flex items-center w-full px-4 py-3 rounded-lg text-left transition-all duration-200 ${
@@ -31,7 +41,10 @@ const NavItem: React.FC<{ icon: React.ElementType; label: string; isActive: bool
   </button>
 );
 
-const InputField: React.FC<React.InputHTMLAttributes<HTMLInputElement> & { icon: React.ElementType }> = ({ icon: Icon, ...props }) => (
+interface InputFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  icon: React.ElementType;
+}
+const InputField: React.FC<InputFieldProps> = ({ icon: Icon, ...props }) => (
     <div className="relative">
         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
             <Icon size={20} className="text-gray-500" />
@@ -43,14 +56,23 @@ const InputField: React.FC<React.InputHTMLAttributes<HTMLInputElement> & { icon:
     </div>
 );
 
-
-const ActionButton: React.FC<{ label: string; loadingLabel: string; isLoading: boolean; icon: React.ElementType; variant?: 'primary' | 'danger'; onClick?: () => void; type?: 'submit' | 'button'; disabled?: boolean }> = 
+interface ActionButtonProps {
+  label: string;
+  loadingLabel: string;
+  isLoading: boolean;
+  icon: React.ElementType;
+  variant?: 'primary' | 'danger';
+  onClick?: () => void;
+  type?: 'submit' | 'button';
+  disabled?: boolean;
+}
+const ActionButton: React.FC<ActionButtonProps> = 
 ({ label, loadingLabel, isLoading, icon: Icon, variant = 'primary', ...props }) => {
-    const baseClasses = "flex items-center justify-center gap-2 font-bold py-3 px-6 rounded-lg shadow-md transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed";
-    const variantClasses = {
+    const variantClasses: Record<'primary' | 'danger', string> = {
         primary: 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white',
         danger: 'bg-red-600 hover:bg-red-700 text-white',
     };
+    const baseClasses = "flex items-center justify-center gap-2 font-bold py-3 px-6 rounded-lg shadow-md transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed";
 
     return (
         <motion.button
@@ -66,7 +88,10 @@ const ActionButton: React.FC<{ label: string; loadingLabel: string; isLoading: b
     );
 };
 
-const ProfileSettings: React.FC<{ user: FirebaseUser | null }> = ({ user }) => {
+interface ProfileSettingsProps {
+    user: FirebaseUser | null;
+}
+const ProfileSettings: React.FC<ProfileSettingsProps> = ({ user }) => {
     const [newName, setNewName] = useState(user?.displayName || '');
     const [isUpdatingName, setIsUpdatingName] = useState(false);
 
@@ -109,7 +134,10 @@ const ProfileSettings: React.FC<{ user: FirebaseUser | null }> = ({ user }) => {
     );
 };
 
-const SecuritySettings: React.FC<{ user: FirebaseUser | null }> = ({ user }) => {
+interface SecuritySettingsProps {
+    user: FirebaseUser | null;
+}
+const SecuritySettings: React.FC<SecuritySettingsProps> = ({ user }) => {
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
@@ -158,7 +186,11 @@ const SecuritySettings: React.FC<{ user: FirebaseUser | null }> = ({ user }) => 
     );
 };
 
-const DeleteAccountSettings: React.FC<{ user: FirebaseUser | null, openModal: () => void }> = ({ openModal }) => {
+interface DeleteAccountSettingsProps {
+    user: FirebaseUser | null;
+    openModal: () => void;
+}
+const DeleteAccountSettings: React.FC<DeleteAccountSettingsProps> = ({ openModal }) => {
     return (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
             <h2 className="text-2xl font-bold mb-1 text-red-400">Zona Berbahaya</h2>
@@ -175,7 +207,12 @@ const DeleteAccountSettings: React.FC<{ user: FirebaseUser | null, openModal: ()
     );
 };
 
-const DeleteAccountModal: React.FC<{ isOpen: boolean; onClose: () => void; user: FirebaseUser | null; }> = ({ isOpen, onClose, user }) => {
+interface DeleteAccountModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    user: FirebaseUser | null;
+}
+const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({ isOpen, onClose, user }) => {
     const navigate = useNavigate();
     const [deletePassword, setDeletePassword] = useState('');
     const [isDeletingAccount, setIsDeletingAccount] = useState(false);
@@ -316,7 +353,6 @@ function SettingsPage() {
                         </div>
                     </motion.aside>
 
-                    {/* Konten Utama */}
                     <motion.main 
                         className="lg:col-span-9"
                         initial={{ opacity: 0, x: 20 }}
@@ -346,5 +382,3 @@ function SettingsPage() {
 }
 
 export default memo(SettingsPage);
-
-

@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
+import { 
+  signInWithEmailAndPassword, 
+  sendPasswordResetEmail,
+  setPersistence,
+  browserSessionPersistence,
+  browserLocalPersistence } from 'firebase/auth';
 import { auth } from '../firebase';
 import { FirebaseError } from 'firebase/app';
 import { Mail, Lock, Eye, EyeOff, AlertTriangle, CheckCircle, X, Loader2, ArrowLeft } from 'lucide-react';
@@ -75,6 +80,7 @@ function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [errors, setErrors] = useState({ email: '', password: '' });
   const [isLoading, setIsLoading] = useState(false);
   const [notification, setNotification] = useState<{ message: string; type: NotificationType | '' }>({ message: '', type: '' });
@@ -113,6 +119,12 @@ function LoginPage() {
     setNotification({ message: '', type: '' });
 
     try {
+      const persistenceType = rememberMe 
+      ? browserLocalPersistence
+      : browserSessionPersistence;
+
+      await setPersistence(auth, persistenceType);
+
       await signInWithEmailAndPassword(auth, email, password);
       showNotification('Login berhasil! Mengalihkan...', 'success');
       setTimeout(() => navigate('/dashboard'), 1500); 
@@ -273,7 +285,17 @@ function LoginPage() {
                 </div>
               </div>
 
-              <div className="flex justify-end items-center mt-4 mb-6">
+              <div className="flex justify-between items-center mt-4 mb-6">
+                <label className="flex items-center select-none cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 bg-gray-700"
+                  />
+                  <span className="ml-2 text-sm text-gray-300">Ingat Saya</span>
+                </label>
+
                 <button
                   type="button"
                   onClick={handleForgotPassword}

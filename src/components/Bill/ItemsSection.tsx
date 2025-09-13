@@ -24,19 +24,21 @@ const ItemsSection: FC<ItemsSectionProps> = memo(({ items, onAddItem, onDeleteIt
   const [newItemName, setNewItemName] = useState('');
   const [newItemPrice, setNewItemPrice] = useState('');
   const [newItemPriceNum, setNewItemPriceNum] = useState(0);
-  const [newItemQty, setNewItemQty] = useState(1);
+  
+  const [newItemQty, setNewItemQty] = useState<number | ''>('');
 
   const resetForm = useCallback(() => {
     setNewItemName('');
     setNewItemPrice('');
-    setNewItemPriceNum(0);
-    setNewItemQty(1);
+    setNewItemPriceNum(1);
+    setNewItemQty('');
     setIsFormVisible(false);
   }, []);
 
   const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
-    if (!newItemName.trim() || !newItemPriceNum) return;
+    if (!newItemName.trim() || !newItemPriceNum || !newItemQty) return;
+    
     onAddItem({ name: newItemName.trim(), price: newItemPriceNum, quantity: newItemQty });
     resetForm();
   }, [onAddItem, newItemName, newItemPriceNum, newItemQty, resetForm]);
@@ -65,10 +67,8 @@ const ItemsSection: FC<ItemsSectionProps> = memo(({ items, onAddItem, onDeleteIt
                 exit={{ opacity: 0, x: -20, transition: { duration: 0.2 } }}
                 className="bg-gray-800/50 rounded-lg p-3"
               >
-
                 <div className="grid grid-cols-2 sm:grid-cols-[1fr_auto_auto_auto_auto] items-center gap-x-4 gap-y-2">
                   <span className="text-gray-200 font-medium break-words col-span-1">{i.name}</span>
-
                   <motion.button 
                     onClick={() => onDeleteItem(i.id)} 
                     className="text-gray-500 hover:text-red-500 transition-colors justify-self-end sm:order-last"
@@ -78,14 +78,11 @@ const ItemsSection: FC<ItemsSectionProps> = memo(({ items, onAddItem, onDeleteIt
                   >
                     <Trash2 size={16} />
                   </motion.button>
-                  
                   <div className="text-gray-400 text-sm sm:hidden">
                     {i.quantity}x @ {formatRupiah(i.price)}
                   </div>
-                  
                   <span className="text-gray-400 text-right hidden sm:block">{formatRupiah(i.price)}</span>
                   <span className="text-gray-200 font-semibold text-center hidden sm:block">{i.quantity}</span>
-
                   <span className="text-emerald-400 font-medium text-right">{formatRupiah(i.price * i.quantity)}</span>
                 </div>
               </motion.div>
@@ -138,8 +135,12 @@ const ItemsSection: FC<ItemsSectionProps> = memo(({ items, onAddItem, onDeleteIt
                 <input 
                   type="number" 
                   value={newItemQty} 
-                  onChange={(e) => setNewItemQty(Math.max(1, parseInt(e.target.value, 10)) || 1)} 
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setNewItemQty(val === '' ? '' : Math.max(1, parseInt(val, 10)));
+                  }}
                   className="form-input w-full sm:w-20 text-center" 
+                  placeholder="Qty"
                   min="1"
                   required
                 />
@@ -169,7 +170,10 @@ const ItemsSection: FC<ItemsSectionProps> = memo(({ items, onAddItem, onDeleteIt
         ) : (
           <motion.button
             layout
-            onClick={() => setIsFormVisible(true)}
+            onClick={() => {
+              setIsFormVisible(true);
+              setNewItemQty(1);
+            }}
             className="w-full text-center p-3 border-2 border-dashed border-gray-700 rounded-lg text-gray-400 hover:bg-gray-800 hover:text-emerald-400 hover:border-emerald-600 transition-colors flex items-center justify-center gap-2"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}

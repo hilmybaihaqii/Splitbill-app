@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { db, auth } from '../firebase';
-import BillList from '../components/BillList';
+import BillList from '../components/dashboard/BillList';
 import CreateBillModal from '../modal/CreateBillModal';
 import { LogOut, PlusCircle, Settings, Wallet, AlertTriangle } from 'lucide-react'; 
 import { motion, AnimatePresence } from 'framer-motion';
