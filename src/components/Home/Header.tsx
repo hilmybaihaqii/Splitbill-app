@@ -32,7 +32,7 @@ const DesktopNav = memo(({ activeSection }: DesktopNavProps) => {
           key={item.href}
           href={`#${item.href}`}
           whileHover={{ y: -5, scale: 1.02 }} 
-          className={`relative text-white hover:text-emerald-400 transition-colors py-2 group ${activeSection === item.href ? 'text-emerald-400 font-semibold' : ''}`} // Diperbarui
+          className={`relative text-white hover:text-emerald-400 transition-colors py-2 group ${activeSection === item.href ? 'text-emerald-400 font-semibold' : ''}`}
         >
           {item.text}
           <span className={`absolute bottom-0 left-1/2 h-0.5 bg-emerald-400 transition-all duration-300 transform -translate-x-1/2 ${activeSection === item.href ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
@@ -79,7 +79,7 @@ const MobileMenu = memo(({ isMenuOpen, toggleMenu, activeSection }: MobileMenuPr
             exit="exit"
             variants={menuOverlayVariants}
             onClick={toggleMenu}
-            className="fixed inset-0 z-40 bg-gray-900/50"
+            className="fixed inset-0 z-40 bg-gray-900/50 backdrop-blur-sm"
           />
           <motion.div
             initial="initial"
@@ -96,7 +96,7 @@ const MobileMenu = memo(({ isMenuOpen, toggleMenu, activeSection }: MobileMenuPr
                 </motion.button>
               </div>
               <div className="flex flex-col space-y-6 text-xl">
-                {navItems.map((item) => (
+                {navItems.map((item, index) => (
                   <motion.a
                     key={item.href}
                     href={`#${item.href}`}
@@ -104,19 +104,19 @@ const MobileMenu = memo(({ isMenuOpen, toggleMenu, activeSection }: MobileMenuPr
                     className={`relative text-white hover:text-emerald-400 transition-colors py-2 group ${activeSection === item.href ? 'text-emerald-400 font-semibold' : ''}`}
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.2, duration: 0.5 }}
+                    transition={{ delay: 0.1 * index, duration: 0.5 }}
                   >
                     {item.text}
-                    <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-emerald-400 transition-all duration-300 transform -translate-x-1/2 group-hover:w-full"></span>
+                    <span className={`absolute bottom-0 left-0 h-0.5 bg-emerald-400 transition-all duration-300 ${activeSection === item.href ? 'w-1/4' : 'w-0 group-hover:w-1/4'}`}></span>
                   </motion.a>
                 ))}
               </div>
             </div>
             <div className="flex flex-col space-y-4">
-              <Link to="/login" onClick={toggleMenu} className="px-4 py-2 rounded-lg font-medium text-white bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 transition-all duration-300 shadow-xl shadow-emerald-500/30 text-center">
+              <Link to="/login" onClick={toggleMenu} className="px-4 py-3 rounded-lg font-medium text-white bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 transition-all duration-300 shadow-xl shadow-emerald-500/30 text-center">
                 Masuk
               </Link>
-              <Link to="/register" onClick={toggleMenu} className="px-4 py-2 rounded-lg font-medium text-emerald-400 border border-emerald-400 hover:bg-emerald-400/10 hover:text-white transition-colors text-center">
+              <Link to="/register" onClick={toggleMenu} className="px-4 py-3 rounded-lg font-medium text-emerald-400 border border-emerald-400 hover:bg-emerald-400/10 hover:text-white transition-colors text-center">
                 Daftar
               </Link>
             </div>
@@ -151,8 +151,6 @@ const Header = ({ activeSection }: HeaderProps) => {
 
     if (typeof window !== 'undefined') {
       window.addEventListener('scroll', controlNavbar);
-
-      // Cleanup function
       return () => {
         window.removeEventListener('scroll', controlNavbar);
       };
@@ -165,30 +163,33 @@ const Header = ({ activeSection }: HeaderProps) => {
   };
 
   return (
-    <motion.header
-      variants={headerVariants}
-      animate={isVisible ? 'visible' : 'hidden'}
-      transition={{ duration: 0.35, ease: 'easeInOut' }}
-      className="py-4 px-6 lg:px-12 fixed top-0 w-full z-50 bg-gray-900/90 backdrop-blur-sm"
-    >
-      <div className="flex justify-between items-center max-w-6xl mx-auto">
-        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="flex items-center space-x-2">
-          <Link to="/">
-            <img src="/logo.png" alt="SplitBill Logo" className="h-8 w-auto lg:h-10" />
-          </Link>
-        </motion.div>
-        
-        <DesktopNav activeSection={activeSection} />
-        <DesktopButtons />
+    <>
+      <motion.header
+        variants={headerVariants}
+        animate={isVisible ? 'visible' : 'hidden'}
+        transition={{ duration: 0.35, ease: 'easeInOut' }}
+        className="py-4 px-6 lg:px-12 fixed top-0 w-full z-30 bg-gray-900/90 backdrop-blur-sm"
+      >
+        <div className="flex justify-between items-center max-w-6xl mx-auto">
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="flex items-center space-x-2">
+            <Link to="/">
+              <img src="/logo.png" alt="SplitBill Logo" className="h-8 w-auto lg:h-10" />
+            </Link>
+          </motion.div>
+          
+          <DesktopNav activeSection={activeSection} />
+          <DesktopButtons />
 
-        <div className="md:hidden">
-          <motion.button onClick={toggleMenu} className="p-2 text-gray-300" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-            {isMenuOpen && isVisible ? <X size={24} /> : <Menu size={24} />}
-          </motion.button>
+          <div className="md:hidden">
+            <motion.button onClick={toggleMenu} className="p-2 text-gray-300" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </motion.button>
+          </div>
         </div>
-      </div>
+      </motion.header>
+
       <MobileMenu isMenuOpen={isMenuOpen} toggleMenu={toggleMenu} activeSection={activeSection} />
-    </motion.header>
+    </>
   );
 };
 

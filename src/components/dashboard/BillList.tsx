@@ -1,114 +1,74 @@
-import { doc, deleteDoc, type FirestoreError } from "firebase/firestore";
-import { MinusCircle } from "lucide-react";
-import { motion, AnimatePresence, type Variants } from "framer-motion";
-import React, { memo, useCallback } from "react";
-import BillCard from "./BillCard";
-import { db } from "../../firebase";
-
-interface Bill {
-  id: string;
-  billName: string;
-  createdAt: {
-    seconds: number;
-  };
-  participantUids?: string[];
-}
+import BillCard from './BillCard'; 
+import { motion } from 'framer-motion';
+import { Frown } from 'lucide-react';
+import type { Bill } from '../../pages/DashboardPage';
 
 interface BillListProps {
-  bills: Bill[] | undefined;
+  bills: Bill[];
   loading: boolean;
-  error: FirestoreError | undefined;
+  error?: Error;
+  onDelete: (billId: string) => void; 
 }
 
-const BillCardSkeleton = () => (
-  <div className="bg-gray-800/50 backdrop-blur-md rounded-2xl p-6 border border-white/10 animate-pulse">
+const listVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const SkeletonCard = () => (
+  <div className="bg-gray-800/50 rounded-2xl p-6 border border-white/10 animate-pulse">
     <div className="flex items-center gap-5">
-      <div className="bg-gray-700/50 p-4 rounded-xl h-[60px] w-[60px]"></div>
-      <div className="flex-1 space-y-3">
-        <div className="h-4 bg-gray-700/50 rounded w-3/4"></div>
-        <div className="h-3 bg-gray-700/50 rounded w-1/2"></div>
+      <div className="bg-gray-700/50 p-4 rounded-xl w-[60px] h-[60px]"></div>
+      <div className="flex-1 min-w-0 space-y-3">
+        <div className="h-6 w-3/4 bg-gray-700 rounded"></div>
+        <div className="h-4 w-1/2 bg-gray-700 rounded"></div>
       </div>
     </div>
   </div>
 );
 
-const containerVariants: Variants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.08,
-    },
-  },
-};
 
-const BillList: React.FC<BillListProps> = memo(({ bills, loading, error }) => {
-  // --- FUNGSI HAPUS LANGSUNG ---
-  // Fungsi ini akan dipanggil langsung dari BillCard
-  const handleDelete = useCallback(async (billId: string) => {
-    try {
-      await deleteDoc(doc(db, 'bills', billId));
-    } catch (err) {
-      console.error("Error deleting bill:", err);
-      // Tidak ada notifikasi error yang ditampilkan ke pengguna
-    }
-  }, []);
-
+const BillList: React.FC<BillListProps> = ({ bills, loading, error, onDelete }) => {
   if (loading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
-        {Array.from({ length: 3 }).map((_, index) => (
-          <BillCardSkeleton key={index} />
-        ))}
+      <div className="grid grid-cols-1 gap-4">
+        <SkeletonCard />
+        <SkeletonCard />
       </div>
     );
   }
 
   if (error) {
+    return <div className="text-center text-red-400">Error: {error.message}</div>;
+  }
+
+  if (bills.length === 0) {
     return (
-      <div className="text-center py-12 text-red-400">
-        Terjadi kesalahan saat memuat data: {error.message}
+      <div className="text-center py-10">
+        <Frown size={40} className="mx-auto text-gray-500 mb-4" />
+        <p className="text-gray-400">Anda belum memiliki tagihan.</p>
+        <p className="text-sm text-gray-500">Klik "Tambah Tagihan" untuk memulai.</p>
       </div>
     );
   }
 
   return (
-    // Tidak perlu modal, jadi React.Fragment bisa dihapus
-    <AnimatePresence>
-      {bills && bills.length > 0 ? (
-        <motion.div
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-1"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          {bills.map((bill) => (
-            <BillCard
-              key={bill.id}
-              bill={bill}
-              onDelete={handleDelete} // Kirim fungsi hapus langsung
-            />
-          ))}
-        </motion.div>
-      ) : (
-        <motion.div
-          className="text-center py-16 px-8 bg-gray-800/40 rounded-xl shadow-2xl mx-auto max-w-md border border-white/10 backdrop-blur-sm"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <MinusCircle size={64} className="mx-auto text-emerald-500/80 mb-4" />
-          <h3 className="mt-2 text-xl font-medium text-white">
-            Anda Belum Punya Tagihan
-          </h3>
-          <p className="mt-2 text-base text-gray-400">
-            Mulai petualangan finansial Anda dengan mengklik "Tambah Tagihan".
-          </p>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <motion.div
+      className="grid grid-cols-1 md:grid-cols-2 gap-5" 
+      variants={listVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      {bills.map((bill) => (
+        <BillCard key={bill.id} bill={bill} onDelete={onDelete} />
+      ))}
+    </motion.div>
   );
-});
+};
 
 export default BillList;
-

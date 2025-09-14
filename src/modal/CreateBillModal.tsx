@@ -1,11 +1,9 @@
-// src/modal/CreateBillModal.tsx
-
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Tag, List, Plus, RotateCw, CheckCircle, XCircle } from 'lucide-react';
+import { Tag, List, Plus, RotateCw, CheckCircle, XCircle, ChevronDown } from 'lucide-react';
 import type { Variants } from 'framer-motion';
 
 interface CreateBillModalProps {
@@ -14,9 +12,9 @@ interface CreateBillModalProps {
 }
 
 const confirmationModalVariants: Variants = {
-  hidden: { y: -50, opacity: 0 },
-  visible: { y: 0, opacity: 1 },
-  exit: { y: 50, opacity: 0 },
+  hidden: { y: -30, scale: 0.95, opacity: 0 },
+  visible: { y: 0, scale: 1, opacity: 1, transition: { type: 'spring', stiffness: 400, damping: 25 } },
+  exit: { y: 30, scale: 0.95, opacity: 0 },
 };
 
 const toastVariants: Variants = {
@@ -31,6 +29,7 @@ function CreateBillModal({ isOpen, onClose }: CreateBillModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [hasError, setHasError] = useState(false);
 
   const navigate = useNavigate();
   const currentUser = auth.currentUser;
@@ -51,13 +50,16 @@ function CreateBillModal({ isOpen, onClose }: CreateBillModalProps) {
         serviceFee: 0,
         items: [],
       });
-      setIsLoading(false);
-      setNotification({ message: 'Tagihan berhasil dibuat!', type: 'success' });
       
-      setTimeout(() => {
-        onClose();
-        navigate(`/bill/${docRef.id}`);
-      }, 1500);
+      setIsLoading(false);
+      
+      onClose(); 
+      navigate(`/bill/${docRef.id}`, { 
+        state: { 
+          message: 'Tagihan berhasil dibuat!', 
+          type: 'success' 
+        } 
+      });
       
     } catch (error) {
       console.error("Error creating bill:", error);
@@ -68,6 +70,12 @@ function CreateBillModal({ isOpen, onClose }: CreateBillModalProps) {
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!billName.trim()) {
+      setHasError(true);
+      setNotification({ message: 'Nama tagihan tidak boleh kosong.', type: 'error' });
+      setTimeout(() => setNotification(null), 3000); 
+      return;
+    }
     setIsConfirmationOpen(true);
   };
   
@@ -75,6 +83,7 @@ function CreateBillModal({ isOpen, onClose }: CreateBillModalProps) {
     onClose();
     setBillName('');
     setMode('restoran');
+    setHasError(false);
   }, [onClose]);
 
   return (
@@ -89,18 +98,11 @@ function CreateBillModal({ isOpen, onClose }: CreateBillModalProps) {
           >
             <motion.div
               className="bg-gray-800/60 p-8 rounded-2xl shadow-2xl w-full max-w-md border border-white/10 relative"
-              initial={{ y: -50, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 50, opacity: 0 }}
-              transition={{ duration: 0.3 }}
+              initial={{ y: -50, scale: 0.95, opacity: 0 }}
+              animate={{ y: 0, scale: 1, opacity: 1 }}
+              exit={{ y: 50, scale: 0.95, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
             >
-              <button
-                onClick={handleCloseModal}
-                className="absolute top-4 right-4 p-2 text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/10"
-                disabled={isLoading}
-              >
-                <X size={24} />
-              </button>
               <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-500 to-teal-500 mb-2">
                 Buat Tagihan Baru
               </h2>
@@ -112,15 +114,22 @@ function CreateBillModal({ isOpen, onClose }: CreateBillModalProps) {
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <Tag className="text-gray-500" size={20} />
                     </div>
-                    <input
+                    <motion.input
                       type="text"
                       id="billName"
                       value={billName}
-                      onChange={(e) => setBillName(e.target.value)}
-                      className="block w-full px-10 py-3 bg-gray-800/60 text-white rounded-lg border border-white/10 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+                      onChange={(e) => {
+                        setBillName(e.target.value);
+                        if (hasError) setHasError(false);
+                      }}
+                      className={`block w-full px-10 py-3 bg-gray-800/60 text-white rounded-lg border transition-all duration-200 
+                        ${hasError 
+                          ? 'border-red-500 focus:ring-red-500 focus:border-red-500' 
+                          : 'border-white/10 focus:ring-emerald-500 focus:border-emerald-500'
+                        }`}
                       placeholder="Nama Tagihan"
-                      required
                       disabled={isLoading}
+                      whileFocus={{ scale: 1.02 }}
                     />
                   </div>
                 </div>
@@ -130,17 +139,21 @@ function CreateBillModal({ isOpen, onClose }: CreateBillModalProps) {
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <List className="text-gray-500" size={20} />
                     </div>
-                    <select
+                    <motion.select
                       id="mode"
                       value={mode}
                       onChange={(e) => setMode(e.target.value)}
-                      className="block w-full px-10 py-3 bg-gray-800/60 text-white rounded-lg border border-white/10 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors appearance-none"
+                      className="block w-full px-10 py-3 bg-gray-800/60 text-white rounded-lg border border-white/10 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 appearance-none"
                       disabled={isLoading}
+                      whileFocus={{ scale: 1.02 }}
                     >
                       <option value="restoran">Resto</option>
                       <option value="jasa">Jasa</option>
                       <option value="rekreasi">Rekreasi</option>
-                    </select>
+                    </motion.select>
+                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                      <ChevronDown className="text-gray-500" size={20} />
+                    </div>
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row justify-end space-y-4 sm:space-y-0 sm:space-x-4 mt-6">
@@ -151,6 +164,7 @@ function CreateBillModal({ isOpen, onClose }: CreateBillModalProps) {
                     disabled={isLoading}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
                   >
                     Batal
                   </motion.button>
@@ -160,17 +174,12 @@ function CreateBillModal({ isOpen, onClose }: CreateBillModalProps) {
                     disabled={isLoading}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
                   >
                     {isLoading ? (
-                      <>
-                        <RotateCw size={18} className="animate-spin" />
-                        Membuat...
-                      </>
+                      <><RotateCw size={18} className="animate-spin" /> Membuat...</>
                     ) : (
-                      <>
-                        <Plus size={18} />
-                        Tambah
-                      </>
+                      <><Plus size={18} /> Tambah</>
                     )}
                   </motion.button>
                 </div>
@@ -228,8 +237,10 @@ function CreateBillModal({ isOpen, onClose }: CreateBillModalProps) {
       <AnimatePresence>
         {notification && (
           <motion.div
-            className={`fixed bottom-6 right-6 p-4 rounded-xl shadow-lg flex items-center gap-3 z-[1002] transition-colors ${
-              notification.type === 'success' ? 'bg-green-600/90' : 'bg-red-600/90'
+            className={`fixed bottom-6 right-6 p-4 rounded-xl shadow-lg flex items-center gap-3 z-[1002] border backdrop-blur-sm ${
+              notification.type === 'success'
+                ? 'bg-gradient-to-br from-teal-500/80 to-emerald-600/80 border-teal-400/50'
+                : 'bg-gradient-to-br from-red-500/80 to-rose-600/80 border-red-400/50'
             }`}
             variants={toastVariants}
             initial="hidden"
@@ -241,7 +252,7 @@ function CreateBillModal({ isOpen, onClose }: CreateBillModalProps) {
             ) : (
               <XCircle size={20} className="text-white" />
             )}
-            <span className="text-white">{notification.message}</span>
+            <span className="text-white font-medium">{notification.message}</span>
           </motion.div>
         )}
       </AnimatePresence>

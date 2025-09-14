@@ -1,13 +1,16 @@
-// --- FIX: Sintaks import diperbaiki (menghapus huruf 'a') ---
 import React, { useState, useCallback, memo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase';
-import { updatePassword, reauthenticateWithCredential, EmailAuthProvider, deleteUser, updateProfile } from 'firebase/auth';
+import { updatePassword, reauthenticateWithCredential, EmailAuthProvider, deleteUser, updateProfile, signOut } from 'firebase/auth';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Save, KeyRound, Trash2, User, Lock, Mail, Shield, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Save, KeyRound, Trash2, User, Lock, Mail, Shield, AlertTriangle, LogOut } from 'lucide-react';
+
+// =================================================================================
+// 1. SEMUA KOMPONEN PENUNJANG DIDEFINISIKAN DI SINI
+// =================================================================================
 
 interface AvatarProps {
   name: string;
@@ -26,20 +29,24 @@ interface NavItemProps {
   label: string;
   isActive: boolean;
   onClick: () => void;
+  variant?: 'default' | 'danger';
 }
-const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, isActive, onClick }) => (
-  <button
-    onClick={onClick}
-    className={`flex items-center w-full px-4 py-3 rounded-lg text-left transition-all duration-200 ${
-      isActive
-        ? 'bg-emerald-500/10 text-emerald-400 font-semibold'
-        : 'text-gray-400 hover:bg-gray-700/50 hover:text-white'
-    }`}
-  >
-    <Icon size={22} className="mr-4" />
-    <span className="text-md">{label}</span>
-  </button>
-);
+const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, isActive, onClick, variant = 'default' }) => {
+    const baseClasses = 'flex items-center w-full px-4 py-3 rounded-lg text-left transition-all duration-200';
+    const defaultVariantClasses = 'text-gray-400 hover:bg-gray-700/50 hover:text-white';
+    const dangerVariantClasses = 'text-red-400/80 hover:bg-red-500/10 hover:text-red-400';
+    
+    const activeClasses = isActive 
+      ? (variant === 'danger' ? 'bg-red-500/20 text-red-400 font-semibold' : 'bg-emerald-500/10 text-emerald-400 font-semibold')
+      : (variant === 'danger' ? dangerVariantClasses : defaultVariantClasses);
+  
+    return (
+      <button onClick={onClick} className={`${baseClasses} ${activeClasses}`}>
+        <Icon size={22} className="mr-4" />
+        <span className="text-md">{label}</span>
+      </button>
+    );
+};
 
 interface InputFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
   icon: React.ElementType;
@@ -187,7 +194,6 @@ const SecuritySettings: React.FC<SecuritySettingsProps> = ({ user }) => {
 };
 
 interface DeleteAccountSettingsProps {
-    user: FirebaseUser | null;
     openModal: () => void;
 }
 const DeleteAccountSettings: React.FC<DeleteAccountSettingsProps> = ({ openModal }) => {
@@ -247,15 +253,11 @@ const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({ isOpen, onClose
             {isOpen && (
                 <motion.div
                     className="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm flex justify-center items-center z-50 p-4"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 >
                     <motion.div
                         className="bg-gray-800 rounded-2xl border border-red-500/30 shadow-xl p-8 max-w-md w-full"
-                        initial={{ scale: 0.9, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0.9, opacity: 0 }}
+                        initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
                         transition={{ type: "spring", stiffness: 300, damping: 25 }}
                     >
                         <div className="text-center">
@@ -263,9 +265,7 @@ const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({ isOpen, onClose
                                 <AlertTriangle className="h-8 w-8 text-red-400" />
                             </div>
                             <h3 className="text-2xl font-bold text-white mb-2">Anda Yakin?</h3>
-                            <p className="text-gray-400 mb-6">
-                                Tindakan ini bersifat permanen. Untuk melanjutkan, masukkan kata sandi Anda.
-                            </p>
+                            <p className="text-gray-400 mb-6">Tindakan ini bersifat permanen. Untuk melanjutkan, masukkan kata sandi Anda.</p>
                         </div>
                         <form onSubmit={handleDeleteAccount} className="space-y-4">
                             <InputField 
@@ -295,21 +295,67 @@ const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({ isOpen, onClose
     );
 };
 
+interface LogoutConfirmModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onConfirm: () => void;
+  }
+const LogoutConfirmModal: React.FC<LogoutConfirmModalProps> = ({ isOpen, onClose, onConfirm }) => (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex justify-center items-center z-50 p-4"
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        >
+          <motion.div
+            className="bg-gray-800 rounded-2xl border border-white/10 shadow-xl p-8 max-w-sm w-full text-center"
+            initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+          >
+            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-yellow-500/10 mb-6">
+              <AlertTriangle className="h-8 w-8 text-yellow-400" />
+            </div>
+            <h3 className="text-2xl font-bold text-white mb-2">Konfirmasi Logout</h3>
+            <p className="text-gray-400 mb-8">Apakah Anda yakin ingin keluar dari sesi ini?</p>
+            <div className="flex justify-center gap-4">
+              <button onClick={onClose} className="w-full bg-gray-700 hover:bg-gray-600 text-white font-medium py-3 px-6 rounded-xl transition-colors">Batal</button>
+              <ActionButton onClick={onConfirm} label="Keluar" loadingLabel="Keluar..." isLoading={false} icon={LogOut} variant="danger"/>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+);
+  
+
+// =================================================================================
+// 2. KOMPONEN UTAMA HALAMAN SETTINGS
+// =================================================================================
+
 function SettingsPage() {
+    const navigate = useNavigate();
     const user = auth.currentUser;
     const [activeTab, setActiveTab] = useState('profile');
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+
+    const handleLogout = useCallback(async () => {
+      try {
+        await signOut(auth);
+        toast.success("Anda berhasil logout.");
+        navigate('/login');
+      } catch (error) {
+        console.error("Error signing out: ", error);
+        toast.error("Gagal untuk logout.");
+      }
+    }, [navigate]);
 
     const renderContent = () => {
         switch (activeTab) {
-            case 'profile':
-                return <ProfileSettings user={user} />;
-            case 'security':
-                return <SecuritySettings user={user} />;
-            case 'delete':
-                return <DeleteAccountSettings user={user} openModal={() => setIsModalOpen(true)} />;
-            default:
-                return null;
+            case 'profile': return <ProfileSettings user={user} />;
+            case 'security': return <SecuritySettings user={user} />;
+            case 'delete': return <DeleteAccountSettings openModal={() => setIsDeleteModalOpen(true)} />;
+            default: return null;
         }
     };
 
@@ -319,16 +365,10 @@ function SettingsPage() {
 
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10">
                 <motion.div
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.1 }}
+                    initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}
                     className="flex items-center mb-10"
                 >
-                    <Link
-                        to="/dashboard"
-                        className="flex items-center gap-2 text-gray-400 hover:text-emerald-400 transition-colors mr-6 p-2 rounded-full hover:bg-gray-800"
-                        title="Kembali ke Dashboard"
-                    >
+                    <Link to="/dashboard" className="flex items-center gap-2 text-gray-400 hover:text-emerald-400 transition-colors mr-6 p-2 rounded-full hover:bg-gray-800" title="Kembali ke Dashboard">
                         <ArrowLeft size={24} />
                     </Link>
                     <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">Pengaturan Akun</h1>
@@ -337,35 +377,40 @@ function SettingsPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
                     <motion.aside 
                         className="lg:col-span-3"
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.5, delay: 0.2 }}
+                        initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.2 }}
                     >
-                        <div className="bg-gray-800/40 backdrop-blur-sm rounded-2xl p-4 border border-white/10 space-y-2">
-                           <div className="flex flex-col items-center p-4 mb-4 text-center">
+                        <div className="bg-gray-800/40 backdrop-blur-sm rounded-2xl p-4 border border-white/10 space-y-1 sticky top-8">
+                            <div className="flex flex-col items-center p-4 mb-4 text-center">
                                 <Avatar name={user?.displayName || 'Pengguna'} />
-                                <h2 className="text-xl font-bold mt-4 text-white truncate">{user?.displayName || 'Pengguna'}</h2>
-                                <p className="text-sm text-gray-400 truncate">{user?.email}</p>
-                           </div>
-                           <NavItem icon={User} label="Profil" isActive={activeTab === 'profile'} onClick={() => setActiveTab('profile')} />
-                           <NavItem icon={Shield} label="Keamanan" isActive={activeTab === 'security'} onClick={() => setActiveTab('security')} />
-                           <NavItem icon={Trash2} label="Hapus Akun" isActive={activeTab === 'delete'} onClick={() => setActiveTab('delete')} />
+                                <h2 className="text-xl font-bold mt-4 text-white truncate max-w-full">{user?.displayName || 'Pengguna'}</h2>
+                                <p className="text-sm text-gray-400 truncate max-w-full">{user?.email}</p>
+                            </div>
+                            <NavItem icon={User} label="Profil" isActive={activeTab === 'profile'} onClick={() => setActiveTab('profile')} />
+                            <NavItem icon={Shield} label="Keamanan" isActive={activeTab === 'security'} onClick={() => setActiveTab('security')} />
+                            
+                            <hr className="border-gray-700/60 my-2" />
+                            
+                            <NavItem icon={Trash2} label="Hapus Akun" isActive={activeTab === 'delete'} onClick={() => setActiveTab('delete')} variant="danger" />
+                            
+                             <button
+                                onClick={() => setIsLogoutModalOpen(true)}
+                                className="flex items-center w-full px-4 py-3 rounded-lg text-left transition-all duration-200 text-red-400/80 hover:bg-red-500/10 hover:text-red-400"
+                            >
+                                <LogOut size={22} className="mr-4" />
+                                <span className="text-md">Logout</span>
+                            </button>
                         </div>
                     </motion.aside>
 
                     <motion.main 
                         className="lg:col-span-9"
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.5, delay: 0.3 }}
+                        initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.3 }}
                     >
-                        <div className="bg-gray-800/40 backdrop-blur-sm rounded-2xl p-8 md:p-10 border border-white/10 min-h-[400px]">
-                           <AnimatePresence mode="wait">
+                        <div className="bg-gradient-to-br from-gray-800/40 to-gray-900/40 backdrop-blur-sm rounded-2xl p-8 md:p-10 border border-white/10 min-h-[400px] shadow-2xl shadow-black/20">
+                            <AnimatePresence mode="wait">
                                 <motion.div
                                     key={activeTab}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -20 }}
+                                    initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
                                     transition={{ duration: 0.2 }}
                                 >
                                     {renderContent()}
@@ -376,7 +421,8 @@ function SettingsPage() {
                 </div>
             </div>
             
-            <DeleteAccountModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} user={user} />
+            <DeleteAccountModal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} user={user} />
+            <LogoutConfirmModal isOpen={isLogoutModalOpen} onClose={() => setIsLogoutModalOpen(false)} onConfirm={handleLogout} />
         </div>
     );
 }
